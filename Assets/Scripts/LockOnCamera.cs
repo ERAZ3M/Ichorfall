@@ -5,98 +5,99 @@ public class LockOnCamera : MonoBehaviour
 {
    
     [Header("References")]
-    [SerializeField] private Transform player;
-    [SerializeField] private CinemachineCamera cam;
+    [SerializeField] private CinemachineCamera freeLookCamera;
+    [SerializeField] private CinemachineCamera lockOnCamera;
+    [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private CinemachineTargetGroup targetGroup;
     
     [Header("Lock On Settings")]
-    [SerializeField] private float lockOnRange = 10f;
+    [SerializeField] private float lockOnRange = 15f;
+    [SerializeField] private LayerMask enemyLayer;
     
     private Transform currentTarget;
     private bool isLockedOn = false;
+
     
 
+    void Start()
+    {
+        freeLookCamera.Priority = 20;
+        lockOnCamera.Priority = 0;
+        
+        GameObject groupObj = new GameObject();
+        targetGroup = groupObj.AddComponent<CinemachineTargetGroup>();
+        targetGroup.AddMember(transform, 1f, 2f);
+    }
+    
     void Update()
     {
 
-        if (Input.GetKeyDown(KeyCode.L))
+        if (Input.GetMouseButtonDown(2)) // Middle Mouse
         {
-            if (!isLockedOn)
-                TryLockOn();
+            if (isLockedOn)
+                Unlock();
             else
-                StopLockOn();
+                TryLockOn();
         }
         
-        // If we're locked on, keep camera looking at target
-        if (isLockedOn && currentTarget != null)
-        {
-
-            if (cam != null)
-            {
-                cam.LookAt = currentTarget;
-                cam.Follow = transform;
-
-            }
-            
-            Debug.Log("Locking on " + currentTarget.name);
-            Vector3 direction = currentTarget.position - transform.position;
-            direction.y = 0; // Don't tilt up/down
-            
-            if (direction.magnitude > 0.1f)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
-            }
-        }
+        
     }
     
     void TryLockOn()
     {
-        // Find all enemies in the scene
-        GameObject[] allEnemies = GameObject.FindGameObjectsWithTag("Enemy");
         
-        if (allEnemies.Length == 0)
-        {
-            Debug.Log("No enemies found!");
+        Collider[] hits = Physics.OverlapSphere(transform.position, lockOnRange, enemyLayer);
+        if (hits.Length == 0)
             return;
-        }
         
-        // Find the closest enemy
+        // Find closest enemy
         Transform closestEnemy = null;
-        float closestDistance = Mathf.Infinity;
+        float closestDist = Mathf.Infinity;
         
-        foreach (GameObject enemy in allEnemies)
+        foreach (var hit in hits)
         {
-            float distance = Vector3.Distance(transform.position, enemy.transform.position);
-            
-            if (distance < lockOnRange && distance < closestDistance)
+            float dist = Vector3.Distance(transform.position, hit.transform.position);
+            if (dist < closestDist)
             {
-                closestDistance = distance;
-                closestEnemy = enemy.transform;
+                closestDist = dist;
+                closestEnemy = hit.transform;
             }
         }
         
-        // Lock onto the closest enemy
-        if (closestEnemy != null)
-        {
-            currentTarget = closestEnemy;
-            isLockedOn = true;
-            Debug.Log("Locked onto: " + currentTarget.name);
-            
-        }
+        currentTarget = closestEnemy;
+        targetGroup.AddMember(currentTarget, 1f, 2f);
+        
+        lockOnCamera.LookAt = targetGroup.transform;
+        lockOnCamera.Priority = 20;
+        freeLookCamera.Priority = 10;
+
+        isLockedOn = true;
+        
+        playerMovement.isLockedOn = true;
+        playerMovement.lockOnTarget = currentTarget;
+        
     }
     
-    void StopLockOn()
+    void Unlock()
     {
         
-        currentTarget = null;
-        isLockedOn = false;
-
-        if (cam != null)
-        {
-            cam.LookAt = transform;
-        }
+        freeLookCamera.ForceCameraPosition(
+            lockOnCamera.transform.position,
+            lockOnCamera.transform.rotation
+            );
         
-        Debug.Log("Lock released");
+        lockOnCamera.Priority = 0;
+        freeLookCamera.Priority = 20;
+        
+        lockOnCamera.LookAt = null;
+        targetGroup.RemoveMember(currentTarget);
+        currentTarget = null;
+        
+        isLockedOn = false;
+        
+        playerMovement.isLockedOn = false;
+        playerMovement.lockOnTarget = null;
+        
     }
     
     // Visualize lock-on range in Scene view
