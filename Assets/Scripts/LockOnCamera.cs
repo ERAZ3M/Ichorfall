@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using UnityEngine.InputSystem;
 
 public class LockOnCamera : MonoBehaviour
 {
@@ -10,17 +11,21 @@ public class LockOnCamera : MonoBehaviour
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private CinemachineTargetGroup targetGroup;
     
+    private PlayerInput playerInput;
+    private InputAction lockOnActon;
+    
     [Header("Lock On Settings")]
     [SerializeField] private float lockOnRange = 15f;
     [SerializeField] private LayerMask enemyLayer;
     
     private Transform currentTarget;
     private bool isLockedOn = false;
-
     
-
     void Start()
     {
+        playerInput = GetComponent<PlayerInput>();
+        lockOnActon = playerInput.actions["LockOn"];
+        
         freeLookCamera.Priority = 20;
         lockOnCamera.Priority = 0;
         
@@ -29,10 +34,21 @@ public class LockOnCamera : MonoBehaviour
         targetGroup.AddMember(transform, 1f, 2f);
     }
     
+    private void OnEnable()
+    {
+        lockOnActon.Enable();
+    }
+
+    private void OnDisable()
+    {
+        lockOnActon.Disable();
+    }
+
+    
     void Update()
     {
 
-        if (Input.GetMouseButtonDown(2)) // Middle Mouse
+        if (lockOnActon.WasPressedThisFrame()) // Middle Mouse
         {
             if (isLockedOn)
                 Unlock();

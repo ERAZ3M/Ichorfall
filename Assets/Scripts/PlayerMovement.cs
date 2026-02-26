@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -7,6 +8,10 @@ public class PlayerMovement : MonoBehaviour
     [Header("References")]
     [SerializeField] private CharacterController controller;
     [SerializeField] private  Transform cam;
+    
+    private PlayerInput playerInput;
+    private InputAction moveAction;
+    private InputAction jumpAction;
 
     [Header("Movement")]
     [SerializeField] private  float speed = 6f;
@@ -36,7 +41,27 @@ public class PlayerMovement : MonoBehaviour
     
     [HideInInspector] public bool isLockedOn;
     [HideInInspector] public Transform lockOnTarget;
+
+
+    private void Start()
+    {
+        playerInput = GetComponent<PlayerInput>();
+        moveAction = playerInput.actions["Move"];
+        jumpAction = playerInput.actions["Jump"];
+    }
+
     
+    private void OnEnable()
+    {
+        moveAction.Enable();
+        jumpAction.Enable();
+    }
+
+    private void OnDisable()
+    {
+        moveAction.Disable();
+        jumpAction.Disable();
+    }
     
     // Update is called once per frame
     void Update()
@@ -63,8 +88,9 @@ public class PlayerMovement : MonoBehaviour
         
             
         // Movement
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        Vector2 input = moveAction.ReadValue<Vector2>();
+        float horizontal = input.x;
+        float vertical = input.y;
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
         if (!isLockedOn)
@@ -116,12 +142,11 @@ public class PlayerMovement : MonoBehaviour
 
                 // Strafing movement relative to player forward
                 Vector3 moveDir = transform.right * horizontal + transform.forward * vertical;
-
                 controller.Move(moveDir.normalized * speed * Time.deltaTime);
         }
 
 
-        if (Input.GetButtonDown("Jump"))
+        if (jumpAction.WasPressedThisFrame())
         {
             jumpBufferTimer = jumpBufferTime;
         }
@@ -142,7 +167,7 @@ public class PlayerMovement : MonoBehaviour
         }
         
         // Jump hold
-        if (Input.GetButton("Jump") && isJumping && velocity.y > 0f)
+        if (jumpAction.IsPressed() && isJumping && velocity.y > 0f)
         {
             if (jumpHoldTimer < maxJumpHoldTime)
             {
@@ -152,7 +177,7 @@ public class PlayerMovement : MonoBehaviour
         }
         
         // Jump release
-        if (Input.GetButtonUp("Jump") && isJumping)
+        if (jumpAction.WasReleasedThisFrame() && isJumping)
         {
             isJumping = false;
             
