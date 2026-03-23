@@ -43,7 +43,7 @@ public class PlayerMovement : MonoBehaviour
     [HideInInspector] public Transform lockOnTarget;
 
 
-    private void Start()
+    private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
         moveAction = playerInput.actions["Move"];
@@ -184,14 +184,21 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Gravity
-        if (velocity.y < 0) // Falling
-        { velocity.y += gravity * fallGravityMultiplier * Time.deltaTime;
-        
-        } else if (velocity.y > 0 && !Input.GetButton("Jump")) // Jump released - faster drop
-        { velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
-        
-        } else
-        { velocity.y += gravity * Time.deltaTime; }
+        if (velocity.y < 0)
+        {
+            // Falling — apply fast fall
+            velocity.y += gravity * fallGravityMultiplier * Time.deltaTime;
+        }
+        else if (velocity.y > 0 && !jumpAction.IsPressed())
+        {
+            // Rising but button released — cut jump short
+            velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
+        }
+        else
+        {
+            // Rising and button held — normal gravity, let jump play out
+            velocity.y += gravity * Time.deltaTime;
+        }
         
         
         // Downward clamping

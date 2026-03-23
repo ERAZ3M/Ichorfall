@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Unity.Cinemachine;
 using UnityEngine.InputSystem;
@@ -8,24 +9,28 @@ public class LockOnCamera : MonoBehaviour
     [Header("References")]
     [SerializeField] private CinemachineCamera freeLookCamera;
     [SerializeField] private CinemachineCamera lockOnCamera;
-    [SerializeField] private PlayerMovement playerMovement;
-    [SerializeField] private CinemachineTargetGroup targetGroup;
+    [SerializeField] private PlayerMovement playerMovement; 
     
     private PlayerInput playerInput;
-    private InputAction lockOnActon;
+    private InputAction LockOnAction;
     
     [Header("Lock On Settings")]
     [SerializeField] private float lockOnRange = 15f;
     [SerializeField] private LayerMask enemyLayer;
     
     private Transform currentTarget;
+    private CinemachineTargetGroup targetGroup;
     private bool isLockedOn = false;
-    
-    void Start()
+
+
+    private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
-        lockOnActon = playerInput.actions["LockOn"];
-        
+        LockOnAction = playerInput.actions["LockOn"];
+    }
+
+    void Start()
+    {
         freeLookCamera.Priority = 20;
         lockOnCamera.Priority = 0;
         
@@ -36,26 +41,30 @@ public class LockOnCamera : MonoBehaviour
     
     private void OnEnable()
     {
-        lockOnActon.Enable();
+        LockOnAction.Enable();
     }
 
     private void OnDisable()
     {
-        lockOnActon.Disable();
+        LockOnAction.Disable();
     }
 
     
     void Update()
     {
 
-        if (lockOnActon.WasPressedThisFrame()) // Middle Mouse
+        if (LockOnAction.WasPressedThisFrame()) // Middle Mouse
         {
             if (isLockedOn)
                 Unlock();
             else
                 TryLockOn();
         }
-        
+
+        if (isLockedOn && currentTarget == null)
+        {
+            Unlock();
+        }
         
     }
     
@@ -84,7 +93,7 @@ public class LockOnCamera : MonoBehaviour
         targetGroup.AddMember(currentTarget, 1f, 2f);
         
         lockOnCamera.LookAt = targetGroup.transform;
-        lockOnCamera.Priority = 20;
+        lockOnCamera.Priority = 30;
         freeLookCamera.Priority = 10;
 
         isLockedOn = true;
