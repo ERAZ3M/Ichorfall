@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/Main%20Menu/MainMenu.uss?fileID=7433441132597879392&amp;guid=54a45c2f89abcca4aa52dc01d0b2294d&amp;type=3#MainMenu"/>
+    <ui:VisualElement class="main-menu-container">
+        <ui:VisualElement class="blood-accent"/>
+        <ui:Label text="ICHORFALL" class="game-title"/>
+        <ui:Label text="BLOOD OF THE GODS" class="subtitle"/>
+        <ui:VisualElement class="button-container">
+            <ui:Button text="PLAY" name="PlayButton" class="menu-button"/>
+            <ui:Button text="OPTIONS" name="OptionsButton" class="menu-button"/>
+            <ui:Button text="QUIT" name="QuitButton" class="menu-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="bottom-accent"/>
+    </ui:VisualElement>
+</ui:UXML>

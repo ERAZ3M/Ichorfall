@@ -23811,10 +23811,15 @@ MonoBehaviour:
   sword: {fileID: 6176391752048267378}
   playerInput: {fileID: 1453251593}
   playerStats: {fileID: 1453251594}
+  playerMovement: {fileID: 1453251590}
   attackCooldown: 0.67
   attackActiveDuration: 0.5
   trigger: Attack
+  lungeTrigger: LungeAttack
+  lungeWindUp: 0.2
+  lungeActiveDuration: 0.3
   isAttacking: 0
+  isLunging: 0
 --- !u!1 &976687131 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1413147793836995397, guid: c9781e49e5131be48a4d244a250e6f5f, type: 3}
@@ -35667,7 +35672,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   controller: {fileID: 1453251591}
   cam: {fileID: 330585546}
-  speed: 6
+  speed: 7
   turnSmoothTime: 0.1
   jumpHeight: 3.5
   timeToApex: 0.5
@@ -35676,15 +35681,19 @@ MonoBehaviour:
   apexThreshold: 1
   apexGravityScale: 0.75
   maxFallSpeed: -25
-  ledgeReachDistance: 0.65
-  ledgeCheckHeight: 1
+  ledgeReachDistance: 0.8
+  ledgeCheckHeight: 1.5
   ledgeLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   hangDropSpeed: 2
-  ledgeVaultForce: 12.5
+  ledgeVaultForce: 13
+  hangSnapOffset: 1.5
+  hangActivationTolerance: 0.15
   isLockedOn: 0
   lockOnTarget: {fileID: 0}
+  lungeForce: 12
+  lungeGravitySuppressDuration: 0.15
   coyoteTime: 0.15
   jumpBufferTime: 0.25
 --- !u!143 &1453251591

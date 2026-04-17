@@ -11,16 +11,15 @@ public class CollisionDetection : MonoBehaviour
     
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy") && wc.isAttacking &&  !enemiesHit.Contains(other))
+        bool anyAttack = wc.isAttacking || wc.isLunging;
+        if (other.CompareTag("Enemy") && anyAttack &&  !enemiesHit.Contains(other))
         {
             
             enemiesHit.Add(other); // Mark enemy as hit
             
             CharacterStats stats = other.GetComponent<CharacterStats>();
             if (stats != null)
-            {
                 stats.TakeDamage(wc.Damage);
-            }
 
             EnemyAI enemyAI = other.GetComponent<EnemyAI>();
             if (enemyAI != null)
@@ -40,7 +39,7 @@ public class CollisionDetection : MonoBehaviour
 
     void Update()
     {
-        if (!wc.isAttacking)
+        if (!wc.isAttacking && !wc.isLunging)
         {
             enemiesHit.Clear();
         }

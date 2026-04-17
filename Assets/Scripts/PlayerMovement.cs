@@ -18,89 +18,36 @@ public class PlayerMovement : MonoBehaviour
     //  Movement
     // ─────────────────────────────────────────────
     [Header("Movement")]
-    [SerializeField] private float speed = 6f;
+    [SerializeField] private float speed = 7f;
     [SerializeField] private float turnSmoothTime = 0.1f;
     private float turnSmoothVelocity;
 
     // ─────────────────────────────────────────────
     //  Jump
-    //
-    //  jumpHeight   → apex height in world units.
-    //  timeToApex   → seconds to reach apex. Higher = floatier rise.
-    //  fallGravityMultiplier → 1 = same speed down as up.
-    //  lowJumpMultiplier → extra gravity on tap (short hop).
-    //  apexThreshold → speed window (m/s) at apex for hangtime. Zero = off.
-    //  apexGravityScale → gravity scale at apex. 1 = no effect.
     // ─────────────────────────────────────────────
     [Header("Jump — Core")]
-    [Tooltip("Apex height in world units on a full-hold jump.")]
     [SerializeField] private float jumpHeight = 3.5f;
-
-    [Tooltip("Seconds to reach apex. Higher = floatier rise.")]
     [SerializeField] private float timeToApex = 0.5f;
 
     [Header("Jump — Feel")]
-    [Tooltip("Fall gravity vs rise gravity. 1 = symmetric.")]
     [SerializeField] private float fallGravityMultiplier = 1f;
-
-    [Tooltip("Extra gravity when button released mid-rise (short hop).")]
     [SerializeField] private float lowJumpMultiplier = 2f;
-
-    [Tooltip("Vertical speed window (m/s) for apex smoothing. Zero = off.")]
     [SerializeField] private float apexThreshold = 1f;
-
-    [Tooltip("Gravity scale at the apex. 1 = no effect, 0 = full float.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float apexGravityScale = 0.75f;
-
-    [Tooltip("Maximum downward speed.")]
+    [Range(0f, 1f)] [SerializeField] private float apexGravityScale = 0.75f;
     [SerializeField] private float maxFallSpeed = -25f;
 
     // ─────────────────────────────────────────────
     //  Ledge Hang
-    //
-    //  How detection works:
-    //   • Ray A (wall ray) fires forward from the player's center.
-    //     It must HIT — confirming there is a wall in front.
-    //   • Ray B (clear ray) fires forward from ledgeCheckHeight
-    //     above the player's center. It must MISS — confirming
-    //     there is open space above the wall top (i.e. a platform edge).
-    //   • Both conditions together = a grabbable ledge.
-    //   • Only triggers while airborne and not falling fast.
-    //
-    //  Tuning:
-    //   ledgeReachDistance → how far the rays reach forward.
-    //                        Match to roughly your character radius + a bit.
-    //   ledgeCheckHeight   → height above center for Ray B.
-    //                        Set to roughly your character's half-height.
-    //   hangDropSpeed      → downward speed applied on S to exit.
-    //   ledgeVaultForce    → tiny upward impulse on W/Space.
-    //                        Player then steers onto the platform normally.
     // ─────────────────────────────────────────────
     [Header("Ledge Hang")]
-    [Tooltip("How far forward the wall and clear rays reach.")]
-    [SerializeField] private float ledgeReachDistance = 0.65f;
-
-    [Tooltip("Height above player center for the 'clear above wall' ray. ~half character height.")]
+    [SerializeField] private float ledgeReachDistance = 0.80f;
     [SerializeField] private float ledgeCheckHeight = 1.5f;
-
-    [Tooltip("Which layers count as climbable geometry.")]
     [SerializeField] private LayerMask ledgeLayerMask = ~0;
-
-    [Tooltip("Downward speed when S is held during hang (drop off ledge).")]
     [SerializeField] private float hangDropSpeed = 2f;
-
-    [Tooltip("Upward impulse on W/Space during hang. Keep small — player steers the rest.")]
     [SerializeField] private float ledgeVaultForce = 13f;
-    
-    [Tooltip("How far below the ledge top the character snaps when grabbing. " +
-             "Increase until the character's hands sit at platform level rather than their body center. " +
-             "Typically set to around half your character's height.")]
     [SerializeField] private float hangSnapOffset = 1.5f;
-
-    [Tooltip("How close (in metres) the player's pivot must be to the target hang Y before the hang activates. " +
-             "Smaller = more precise, larger = more forgiving.")]
     [SerializeField] private float hangActivationTolerance = 0.15f;
+    [SerializeField] private float vaultLungeDelay = 0.15f;   // Time before lunge allowed after vault
 
     // ─────────────────────────────────────────────
     //  Lock-On (set by external system)
@@ -109,20 +56,37 @@ public class PlayerMovement : MonoBehaviour
     [HideInInspector] public Transform lockOnTarget;
 
     // ─────────────────────────────────────────────
+    //  Lunge (called by WeaponController)
+    // ─────────────────────────────────────────────
+    [Header("Lunge Attack")]
+    [SerializeField] private float lungeForce = 18f;
+    [SerializeField] private float lungeGravitySuppressDuration = 0.15f;
+
+    private WeaponController weaponController;
+    private float lungeGravityTimer;
+
+    // ─────────────────────────────────────────────
     //  Private state
     // ─────────────────────────────────────────────
     private Vector3 velocity;
     private bool isGrounded;
     private bool isJumping;
     private bool isHanging;
+    private bool isVaultJump;
+    private bool vaultInputPressed;
 
-    // Derived physics (from jumpHeight + timeToApex)
     private float gravity;
     private float jumpForce;
-
-
-    // Prevents immediately re-grabbing the ledge after vaulting/dropping
     private float hangCooldownTimer;
+    private float vaultCooldownTimer;
+
+    // ─────────────────────────────────────────────
+    //  Public state
+    // ─────────────────────────────────────────────
+    public bool IsGrounded => isGrounded;
+    public bool IsJumping  => isJumping;
+    public bool IsHanging  => isHanging;
+    public bool CanLungeImmediately => vaultCooldownTimer <= 0f;
 
     // ─────────────────────────────────────────────
     //  Coyote Time & Jump Buffer
@@ -144,12 +108,13 @@ public class PlayerMovement : MonoBehaviour
         RecalculateJumpPhysics();
     }
 
+    private void Start()
+    {
+        weaponController = GetComponent<WeaponController>();
+    }
+
     private void OnValidate() => RecalculateJumpPhysics();
 
-    /// <summary>
-    /// Derives gravity and jump impulse from designer-friendly values.
-    /// Physics: v0 = 2h/t   g = 2h/t²
-    /// </summary>
     private void RecalculateJumpPhysics()
     {
         if (timeToApex <= 0f) return;
@@ -165,21 +130,35 @@ public class PlayerMovement : MonoBehaviour
     // ─────────────────────────────────────────────
     private void Update()
     {
+        // Timers
+        vaultCooldownTimer -= Time.deltaTime;
+
+        // Capture a fresh press toward the wall for vaulting
+        if (moveAction.WasPressedThisFrame())
+        {
+            if (IsMovingTowardWall())
+                vaultInputPressed = true;
+        }
+
         HandleGrounding();
 
         if (isHanging)
         {
-            // While hanging, only process hang inputs — everything else is frozen
             HandleHang();
             return;
         }
 
-        hangCooldownTimer -= Time.deltaTime;
+        hangCooldownTimer  -= Time.deltaTime;
+        lungeGravityTimer  -= Time.deltaTime;
 
         HandleMovement();
         HandleJumpBuffer();
         HandleJump();
         HandleLedgeDetection();
+
+        if (isVaultJump && velocity.y <= 0f)
+            isVaultJump = false;
+
         ApplyGravity();
         ClampFallSpeed();
 
@@ -199,12 +178,13 @@ public class PlayerMovement : MonoBehaviour
 
             if (velocity.y < 0f)
             {
-                velocity.y = -2f; // small negative keeps CharacterController grounded
+                velocity.y = -2f;
                 isJumping  = false;
             }
 
-            // Landing always cancels a hang (safety fallback)
             if (isHanging) ExitHang();
+
+            isVaultJump = false;
         }
         else
         {
@@ -214,15 +194,11 @@ public class PlayerMovement : MonoBehaviour
 
     // ─────────────────────────────────────────────
     //  Ledge Detection
-    //
-    //  Ray A: from center forward — must HIT a wall.
-    //  Ray B: from (center + ledgeCheckHeight up) forward — must MISS.
-    //  Only active while airborne and not falling fast (velocity.y > -1).
     // ─────────────────────────────────────────────
     private void HandleLedgeDetection()
     {
         if (isGrounded) return;
-        if (hangCooldownTimer > 0f) return; // still cooling down from last hang
+        if (hangCooldownTimer > 0f) return;
 
         Vector3 origin      = transform.position;
         Vector3 aboveOrigin = origin + Vector3.up * ledgeCheckHeight;
@@ -234,21 +210,16 @@ public class PlayerMovement : MonoBehaviour
 
         if (!wallHit || !clearTop) return;
 
-        // Find the exact ledge surface Y via a downward ray from above the edge.
         Vector3 downRayOrigin = aboveOrigin + forward * ledgeReachDistance;
         RaycastHit surfaceHit;
         float ledgeSurfaceY;
         if (Physics.Raycast(downRayOrigin, Vector3.down, out surfaceHit, ledgeCheckHeight + 0.5f, ledgeLayerMask))
             ledgeSurfaceY = surfaceHit.point.y;
         else
-            ledgeSurfaceY = wallHitInfo.point.y; // fallback
+            ledgeSurfaceY = wallHitInfo.point.y;
 
-        // The Y the player's pivot needs to be at for hands to sit on the ledge.
         float targetY = ledgeSurfaceY - hangSnapOffset;
 
-        // Only activate once the player has naturally drifted within tolerance of
-        // the hang position — no snapping, it just locks in when they arrive there.
-        // Also requires the player to be falling or stationary, not rising.
         if (Mathf.Abs(transform.position.y - targetY) <= hangActivationTolerance && velocity.y <= 0f)
             EnterHang();
     }
@@ -257,48 +228,80 @@ public class PlayerMovement : MonoBehaviour
     {
         isHanging = true;
         isJumping = false;
-        velocity  = Vector3.zero; // freeze in place — player is already at the right Y
+        velocity  = Vector3.zero;
     }
 
     private void ExitHang()
     {
         isHanging         = false;
-        hangCooldownTimer = 0.2f; // window to clear the wall before re-grabbing is allowed
+        hangCooldownTimer = 0.3f;
+        vaultInputPressed = false;
     }
 
     // ─────────────────────────────────────────────
-    //  Hang State — inputs while frozen on ledge
-    //
-    //  Uses WasPressedThisFrame for both actions so that
-    //  any input held at the moment of grabbing is ignored —
-    //  the player must re-press to act.
-    //
-    //  S pressed  → drop off, slide down.
-    //  W pressed or Space pressed → tiny upward hop.
-    //  No input   → stay frozen.
+    //  Hang inputs
     // ─────────────────────────────────────────────
     private void HandleHang()
     {
-        // WasPressedThisFrame means held inputs from before the grab are ignored.
-        // The player must physically re-press the button to act.
-        bool dropPressed  = moveAction.WasPressedThisFrame() && moveAction.ReadValue<Vector2>().y < -0.5f;
-        bool vaultPressed = (moveAction.WasPressedThisFrame() && moveAction.ReadValue<Vector2>().y > 0.5f)
-                         || jumpAction.WasPressedThisFrame();
-
-        if (dropPressed)
+        // Drop: pressing S (backward relative to player facing)
+        if (IsMovingBackward())
         {
             ExitHang();
             velocity.y = -hangDropSpeed;
             controller.Move(velocity * Time.deltaTime);
+            return;
         }
-        else if (vaultPressed)
+
+        // Vault: movement key toward wall (buffered) OR Space pressed this frame
+        bool vaultViaMovement = vaultInputPressed;
+        bool vaultViaJump     = jumpAction.WasPressedThisFrame();
+
+        if (vaultViaMovement || vaultViaJump)
         {
+            vaultInputPressed = false;
+
+            // Prevent accidental normal jump from firing after vault
+            jumpBufferTimer = 0f;
+            coyoteTimer     = 0f;
+            vaultCooldownTimer = vaultLungeDelay;
+
             ExitHang();
             velocity.y = ledgeVaultForce;
-            isJumping  = true;
+            isVaultJump = true;          // bypass short‑hop gravity, full height
+            // isJumping stays false → allows lunge after cooldown
             controller.Move(velocity * Time.deltaTime);
         }
-        // else: frozen — do nothing this frame
+    }
+
+    /// <summary>
+    /// Returns true if the player is pressing the key that would move them backward.
+    /// </summary>
+    private bool IsMovingBackward()
+    {
+        Vector2 input = moveAction.ReadValue<Vector2>();
+        if (input.magnitude < 0.1f) return false;
+
+        float camYaw = cam.eulerAngles.y;
+        Vector3 moveDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(input.x, 0f, input.y);
+        moveDir.Normalize();
+
+        return Vector3.Dot(moveDir, transform.forward) < -0.5f;
+    }
+
+    /// <summary>
+    /// Returns true if the player is pressing the key that would move them toward the wall
+    /// (forward relative to player facing).
+    /// </summary>
+    private bool IsMovingTowardWall()
+    {
+        Vector2 input = moveAction.ReadValue<Vector2>();
+        if (input.magnitude < 0.1f) return false;
+
+        float camYaw = cam.eulerAngles.y;
+        Vector3 moveDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(input.x, 0f, input.y);
+        moveDir.Normalize();
+
+        return Vector3.Dot(moveDir, transform.forward) > 0.5f;
     }
 
     // ─────────────────────────────────────────────
@@ -375,26 +378,25 @@ public class PlayerMovement : MonoBehaviour
             coyoteTimer     = 0f;
         }
 
-        if (jumpAction.WasReleasedThisFrame() && isJumping && velocity.y > 0f)
+        // Only cancel jump on release if it's NOT a vault jump
+        if (jumpAction.WasReleasedThisFrame() && isJumping && velocity.y > 0f && !isVaultJump)
             isJumping = false;
     }
 
     // ─────────────────────────────────────────────
     //  Gravity
-    //   1. Apex  → reduced gravity (apexGravityScale)
-    //   2. Fall  → fallGravityMultiplier
-    //   3. Rise + button released → lowJumpMultiplier (short hop)
-    //   4. Rise + button held → normal
     // ─────────────────────────────────────────────
     private void ApplyGravity()
     {
+        if (lungeGravityTimer > 0f) return;
+
         bool atApex = Mathf.Abs(velocity.y) < apexThreshold && !isGrounded;
 
         if (atApex)
             velocity.y += gravity * apexGravityScale * Time.deltaTime;
         else if (velocity.y < 0f)
             velocity.y += gravity * fallGravityMultiplier * Time.deltaTime;
-        else if (!isJumping && velocity.y > 0f)
+        else if (!isJumping && velocity.y > 0f && !isVaultJump)
             velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
         else
             velocity.y += gravity * Time.deltaTime;
@@ -407,9 +409,16 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    //  Gizmos — Scene view visualisation of ledge rays
-    //  Yellow = wall ray (must hit)
-    //  Cyan   = clear ray (must miss)
+    //  Lunge
+    // ─────────────────────────────────────────────
+    public void PerformLunge()
+    {
+        velocity.y = lungeForce;
+        lungeGravityTimer = lungeGravitySuppressDuration;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Gizmos
     // ─────────────────────────────────────────────
     private void OnDrawGizmosSelected()
     {
