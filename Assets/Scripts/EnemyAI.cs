@@ -6,7 +6,7 @@ public class EnemyAI : MonoBehaviour
     public State currentState = State.Idle;
 
     [Header("References")]
-    [SerializeField] private Transform player;
+    private Transform player;
     private CharacterController controller;
     private CharacterStats stats;
 
@@ -39,6 +39,11 @@ public class EnemyAI : MonoBehaviour
 
     void Start()
     {
+        
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+            player = playerObject.transform;
+        
         controller = GetComponent<CharacterController>();
         stats = GetComponent<CharacterStats>();
 

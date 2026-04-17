@@ -4,7 +4,7 @@ public class CharacterStats : MonoBehaviour
 {
 
     public int maxHealth;
-    public int currentHealth { get; private set; } 
+    public int currentHealth { get; set; } 
     
     public int damage;
 
@@ -32,6 +32,11 @@ public class CharacterStats : MonoBehaviour
         // Placeholder for death animation trigger
         // e.g., GetComponent<Animator>().SetTrigger("Die");
 
+        if (CompareTag("Player"))
+        {
+            GameManager.Instance.OnPlayerDied();
+        } else {
+        
         // Disable collider so no further hits can register
         Collider col = GetComponent<Collider>();
         if (col != null)
@@ -39,7 +44,7 @@ public class CharacterStats : MonoBehaviour
 
         // Destroy after a short delay (allows particles/animations to play)
         Destroy(gameObject, 2f);
-        
+        }
     }
     
     public void ResetHealth()
