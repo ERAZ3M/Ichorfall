@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 328bfb8438c749d46ad9174283110a36
+timeCreated: 1513680030
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/Colliders/SpringSphereCollider.cs
+  uploadId: 593720

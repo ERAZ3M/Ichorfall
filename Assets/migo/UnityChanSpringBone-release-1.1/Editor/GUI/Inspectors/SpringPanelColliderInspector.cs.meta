@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: ec0e1c920810a7440801d1c4a8f03aa4
+timeCreated: 1519380390
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Editor/GUI/Inspectors/SpringPanelColliderInspector.cs
+  uploadId: 593720

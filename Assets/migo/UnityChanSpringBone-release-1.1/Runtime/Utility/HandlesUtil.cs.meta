@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 1edd46d32ea1e304d8108b48137eb5f9
+timeCreated: 1520344456
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/Utility/HandlesUtil.cs
+  uploadId: 593720

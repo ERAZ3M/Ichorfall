@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 2eda6a268198bc3438847dfd913d1a19
+timeCreated: 1520410729
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Editor/Utility/SetObjectParentWindow.cs
+  uploadId: 593720

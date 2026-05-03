@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: debb8410d69e68a47830733e05781023
+timeCreated: 1514268545
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/Utility/ObjectBuilding/UnityComponentStringListBuilder.cs
+  uploadId: 593720

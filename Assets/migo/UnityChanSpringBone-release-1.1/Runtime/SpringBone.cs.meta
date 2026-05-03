@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 03118221f4bfcd74ba0ad8075da02411
+timeCreated: 1513680030
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/SpringBone.cs
+  uploadId: 593720

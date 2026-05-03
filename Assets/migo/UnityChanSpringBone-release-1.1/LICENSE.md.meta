@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c8e1e2c6063d34b8daec965b95078dd8
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/LICENSE.md
+  uploadId: 593720

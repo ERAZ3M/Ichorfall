@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: c7937c5bfb0b4c547b75cb3f4b1d74f9
+timeCreated: 1516811412
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Editor/GUI/Windows/SaveSpringBoneSetupWindow.cs
+  uploadId: 593720

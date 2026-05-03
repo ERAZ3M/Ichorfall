@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: c60bdcc1a8f90724fb0850bd7777ddfd
+timeCreated: 1473955007
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/ForceProviders/ForceVolume.cs
+  uploadId: 593720

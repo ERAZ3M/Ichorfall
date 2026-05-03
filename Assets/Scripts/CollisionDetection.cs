@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -18,9 +19,11 @@ public class CollisionDetection : MonoBehaviour
             enemiesHit.Add(other); // Mark enemy as hit
             
             CharacterStats stats = other.GetComponent<CharacterStats>();
-            if (stats != null)
+            if (stats != null) {
                 stats.TakeDamage(wc.Damage);
-
+                Debug.Log("Hit" +  other.name);
+            }
+                
             EnemyAI enemyAI = other.GetComponent<EnemyAI>();
             if (enemyAI != null)
                 enemyAI.TakeHit(transform.position);

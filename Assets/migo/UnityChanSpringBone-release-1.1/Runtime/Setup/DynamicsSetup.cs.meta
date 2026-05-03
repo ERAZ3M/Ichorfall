@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 30476b6371ef0b349aad36a39b54be53
+timeCreated: 1519043928
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 254165
+  packageName: Mi-go
+  packageVersion: 1.0
+  assetPath: Assets/migo/UnityChanSpringBone-release-1.1/Runtime/Setup/DynamicsSetup.cs
+  uploadId: 593720
