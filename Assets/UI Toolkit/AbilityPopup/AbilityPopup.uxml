@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="project://database/Assets/UI%20Toolkit/AbilityPopup/AbilityPopupStyle.uss?fileID=7433441132597879392&amp;guid=ef4250c17c80a0a4a9bca86827e24ebb&amp;type=3#AbilityPopupStyle"/>
+    <ui:VisualElement name="AbilityPopupContainer" style="flex-grow: 1; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.85);">
+        <ui:VisualElement name="Card" style="width: 500px; padding: 40px; background-color: rgba(20, 20, 20, 0.95); border-radius: 15px; align-items: center;">
+            <ui:Image name="AbilityIcon" style="width: 150px; height: 150px; margin-bottom: 20px;" />
+            <ui:Label name="AbilityName" text="Ability Acquired" style="font-size: 36px; color: white; margin-bottom: 10px; -unity-font-style: bold;" />
+            <ui:Label name="AbilityDescription" text="" style="font-size: 18px; color: #CCCCCC; margin-bottom: 30px; white-space: normal; text-align: center;" />
+            <ui:Label name="DismissPrompt" text="Press any button to continue" style="font-size: 18px; color: #888888;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

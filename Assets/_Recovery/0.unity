@@ -910,6 +910,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   abilityToGrant: {fileID: 11400000, guid: 72e450a4766b55040b8dda51260d80db, type: 2}
   pickupEffect: {fileID: 0}
+  popupController: {fileID: 0}
 --- !u!64 &403439382
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1368,28 +1369,13 @@ GameObject:
   m_Component:
   - component: {fileID: 1020950466}
   - component: {fileID: 1020950465}
-  - component: {fileID: 1020950464}
   m_Layer: 5
-  m_Name: AbilityPopup
+  m_Name: AbilityPopupUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1020950464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1020950463}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31f46131dcb1fa442bbb47a0039797f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  abilityPopUpDocument: {fileID: 1020950465}
-  dismissAction: {fileID: -5593402438873458575, guid: 40e299275269df44dbaf56093dfe8a46, type: 3}
 --- !u!114 &1020950465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2421,6 +2407,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   abilityToGrant: {fileID: 11400000, guid: 1ce9597d898826641a7d2c793284667f, type: 2}
   pickupEffect: {fileID: 0}
+  popupController: {fileID: 2091685022}
 --- !u!1 &2045566311
 GameObject:
   m_ObjectHideFlags: 0
@@ -2502,6 +2489,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
   maxHealth: 3
   damage: 0
+--- !u!1 &2091685021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2091685023}
+  - component: {fileID: 2091685022}
+  m_Layer: 5
+  m_Name: AbilityPopup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2091685022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091685021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31f46131dcb1fa442bbb47a0039797f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  abilityPopUpDocument: {fileID: 1020950465}
+--- !u!4 &2091685023
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091685021}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2091859807
 GameObject:
   m_ObjectHideFlags: 0
@@ -4462,3 +4494,4 @@ SceneRoots:
   - {fileID: 2004483372}
   - {fileID: 1495941799}
   - {fileID: 1020950466}
+  - {fileID: 2091685023}

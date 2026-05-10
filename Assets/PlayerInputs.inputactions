@@ -3,7 +3,7 @@
     "name": "PlayerInputs",
     "maps": [
         {
-            "name": "Movement",
+            "name": "Player",
             "id": "f1c0e31e-a4fe-469e-a02d-4eaaaa9df276",
             "actions": [
                 {
@@ -129,6 +129,54 @@
                     "processors": "",
                     "groups": "",
                     "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Global",
+            "id": "3202fefe-3cf5-474e-9fc7-506175a913cd",
+            "actions": [
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "4c0362e1-5209-4b3e-b2de-660717595ce3",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Dismiss",
+                    "type": "Button",
+                    "id": "79cf8e82-f53d-4f83-86b6-d8536133c7cc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "3cc2ac7b-ae59-4bb9-84d6-de6214324afe",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1f09503e-5976-4343-8db3-13326b2adcc0",
+                    "path": "<Keyboard>/anyKey",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dismiss",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -9,6 +9,7 @@ public class WeaponController : MonoBehaviour
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private PlayerStats playerStats;
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerInventory playerInventory;
     private InputAction attackAction;
     private InputAction jumpAction;
 
@@ -22,6 +23,10 @@ public class WeaponController : MonoBehaviour
     [SerializeField] private float lungeWindUp = 0.2f;
     [SerializeField] private float lungeActiveDuration = 0.3f;
 
+    [Header("Ability Requirements")]
+    [SerializeField] private AbilityData swordAbility;   // Drag SwordAbility asset here
+    [SerializeField] private AbilityData lungeAbility;   // Drag LungeAbility asset here
+
     private Animator swordAnimator;
     private bool canAttack = true;
     public bool isAttacking = false;
@@ -29,6 +34,7 @@ public class WeaponController : MonoBehaviour
 
     private bool canLunge = true;
     private Coroutine lungeCoroutine;
+
 
     public int Damage => playerStats != null ? playerStats.damage : 0;
 
@@ -40,20 +46,36 @@ public class WeaponController : MonoBehaviour
 
     private void Start()
     {
+
         if (sword != null)
+        {
+            // Keep sword inactive until the sword ability is unlocked
+            sword.SetActive(HasSwordAbility());
             swordAnimator = sword.GetComponent<Animator>();
+        }
         else
+        {
             Debug.LogError("Sword GameObject not assigned!");
+        }
 
         if (playerStats == null)
             playerStats = GetComponent<PlayerStats>();
 
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
+
+        // Listen for ability unlocks to enable the sword later
+        if (playerInventory != null)
+            playerInventory.OnAbilityUnlocked.AddListener(OnAnyAbilityUnlocked);
     }
 
     private void OnEnable()  => attackAction.Enable();
-    private void OnDisable() => attackAction.Disable();
+    private void OnDisable()
+    {
+        attackAction.Disable();
+        if (playerInventory != null)
+            playerInventory.OnAbilityUnlocked.RemoveListener(OnAnyAbilityUnlocked);
+    }
 
     private void Update()
     {
@@ -63,19 +85,21 @@ public class WeaponController : MonoBehaviour
             ResetLunge();
         }
 
-        if (attackAction.WasPressedThisFrame() && canAttack)
+        // Attack – gated by sword ability
+        if (attackAction.WasPressedThisFrame() && canAttack && HasSwordAbility())
         {
             SwordAttack();
         }
 
-        // Lunge only when airborne, NOT hanging, NOT in a normal jump, after vault cooldown, and lunge available
+        // Lunge – gated by lunge ability AND all existing conditions
         if (!playerMovement.IsGrounded && 
             !playerMovement.IsHanging && 
             !playerMovement.IsJumping && 
             playerMovement.CanLungeImmediately && 
             canLunge && 
             !isLunging && 
-            jumpAction.WasPressedThisFrame())
+            jumpAction.WasPressedThisFrame() && 
+            HasLungeAbility())
         {
             lungeCoroutine = StartCoroutine(LungeAttack());
         }
@@ -125,5 +149,15 @@ public class WeaponController : MonoBehaviour
         }
         isLunging = false;
         canLunge  = true;
+    }
+
+    private bool HasSwordAbility() => playerInventory != null && playerInventory.HasAbility(swordAbility);
+    private bool HasLungeAbility() => playerInventory != null && playerInventory.HasAbility(lungeAbility);
+
+    private void OnAnyAbilityUnlocked(AbilityData ability)
+    {
+        // Enable the sword GameObject when the sword ability is unlocked
+        if (ability == swordAbility && sword != null)
+            sword.SetActive(true);
     }
 }
