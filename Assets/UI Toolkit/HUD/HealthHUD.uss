@@ -1,0 +1,45 @@
+.health-container {
+    flex-direction: row;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    /* Add any padding or spacing */
+}
+
+.heart-slot {
+    width: 128px;
+    height: 128px;
+    margin-right: 4px;
+    /* So children can overlay */
+    position: relative;
+    overflow: hidden;
+}
+
+.heart-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    /* Transition opacity changes smoothly */
+    transition-property: opacity;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-in-out;
+}
+
+.heart-full {
+    background-image: url('heart_full.png');
+    opacity: 0;   /* hidden by default, script will set 1 */
+}
+
+.heart-half {
+    background-image: url('heart_half.png');
+    opacity: 0;
+}
+
+.heart-empty {
+    background-image: url('heart_empty.png');
+    opacity: 0;
+}

@@ -1,0 +1,25 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/HUD/HealthHUD.uss?fileID=7433441132597879392&amp;guid=e23ff59ee620116459f71e4217cd883c&amp;type=3#HealthHUD"/>
+    <ui:VisualElement name="HeartContainer" class="health-container" style="flex-grow: 1;">
+        <ui:VisualElement name="HeartSlot1" class="heart-slot" style="flex-grow: 1;">
+            <ui:VisualElement name="Full" class="heart-image heart-full" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Half" class="heart-image heart-half" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Empty" class="heart-image heart-empty" style="flex-grow: 1;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="HeartSlot2" class="heart-slot" style="flex-grow: 1;">
+            <ui:VisualElement name="Full" class="heart-image heart-full" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Half" class="heart-image heart-half" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Empty" class="heart-image heart-empty" style="flex-grow: 1;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="HeartSlot3" class="heart-slot" style="flex-grow: 1;">
+            <ui:VisualElement name="Full" class="heart-image heart-full" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Half" class="heart-image heart-half" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Empty" class="heart-image heart-empty" style="flex-grow: 1;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="HeartSlot4" class="heart-slot" style="flex-grow: 1;">
+            <ui:VisualElement name="Full" class="heart-image heart-full" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Half" class="heart-image heart-half" style="flex-grow: 1;"/>
+            <ui:VisualElement name="Empty" class="heart-image heart-empty" style="flex-grow: 1;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

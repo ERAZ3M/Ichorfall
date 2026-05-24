@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a996f9111fb984d428e22a9193370da7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 84219
+  packageName: Character Reptile
+  packageVersion: 1.0
+  assetPath: Assets/Character_Reptile/Animation/Materials/reptile_diffuse.mat
+  uploadId: 164700
