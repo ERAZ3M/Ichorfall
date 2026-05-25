@@ -1,5 +1,6 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Optional: if you want to reload the whole scene
+using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,13 +9,18 @@ public class GameManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject player;
     [SerializeField] private EnemySpawner enemySpawner;
+    [SerializeField] private FadeController fadeController;
 
     private Transform respawnPoint;
     private CharacterStats playerStats;
+    private bool isRespawning = false;
+
+    // For input disabling
+    private PlayerInput playerInput;
+    private InputActionMap playerActionMap;
 
     private void Awake()
     {
-        // Singleton setup
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -25,72 +31,84 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // Find respawn point by tag
+        // Find respawn point
         GameObject respawnObject = GameObject.FindGameObjectWithTag("Respawn");
         if (respawnObject != null)
             respawnPoint = respawnObject.transform;
         else
-            Debug.LogError("GameManager: No GameObject with tag 'Respawn' found!");
+            Debug.LogError("GameManager: No Respawn point found!");
 
-        // Get player stats to restore health later
         if (player != null)
+        {
             playerStats = player.GetComponent<CharacterStats>();
+            playerInput = player.GetComponent<PlayerInput>();
+            if (playerInput != null)
+                playerActionMap = playerInput.actions.FindActionMap("Player");
+        }
+
+        if (fadeController == null)
+            fadeController = FindObjectOfType<FadeController>();
     }
 
-    // Called by the player's health script when health reaches 0
     public void OnPlayerDied()
     {
-        Debug.Log("Player died. Respawning...");
-        ResetEnemies();
-        RespawnPlayer();
+        if (isRespawning) return;
+        StartCoroutine(DeathSequence());
     }
 
-    private void ResetEnemies()
+    private IEnumerator DeathSequence()
     {
-        // 1. Destroy all existing enemies in the scene
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject enemy in enemies)
-        {
-            Destroy(enemy);
-        }
+        isRespawning = true;
 
-        // 2. Tell the spawner to create new enemies
-        if (enemySpawner != null)
+        // 1. Disable gameplay input (keep UI input alive)
+        if (playerActionMap != null)
+            playerActionMap.Disable();
+
+        // Disable movement & combat scripts
+        WeaponController wc = player.GetComponent<WeaponController>();
+        if (wc != null) wc.enabled = false;
+
+        PlayerMovement pm = player.GetComponent<PlayerMovement>();
+        if (pm != null) pm.enabled = false;
+
+        // 2. Death animation placeholder (3 seconds realtime)
+        yield return new WaitForSecondsRealtime(3f);
+
+        // 3. Fade out, reset world, fade in
+        yield return StartCoroutine(fadeController.FadeOutIn(1f, 0.2f, 1f, () =>
         {
-            enemySpawner.SpawnEnemies();
-        }
-        else
-        {
-            Debug.LogError("GameManager: EnemySpawner reference is missing!");
-        }
+            // Destroy all enemies
+            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+            foreach (GameObject enemy in enemies)
+                Destroy(enemy);
+
+            // Respawn enemies via spawner
+            if (enemySpawner != null)
+                enemySpawner.SpawnEnemies();
+            else
+                Debug.LogError("EnemySpawner missing!");
+
+            // Teleport player & restore health
+            if (player != null && respawnPoint != null)
+            {
+                CharacterController cc = player.GetComponent<CharacterController>();
+                if (cc != null) cc.enabled = false;
+                player.transform.position = respawnPoint.position;
+                player.transform.rotation = respawnPoint.rotation;
+                if (cc != null) cc.enabled = true;
+
+                if (pm != null) pm.ResetVelocity();
+                if (playerStats != null)
+                    playerStats.ResetHealth();
+            }
+        }));
+
+        // 4. Re-enable scripts and input
+        if (wc != null) wc.enabled = true;
+        if (pm != null) pm.enabled = true;
+        if (playerActionMap != null)
+            playerActionMap.Enable();
+
+        isRespawning = false;
     }
-
-    private void RespawnPlayer()
-    {
-        if (player == null || respawnPoint == null) return;
-
-        // Move player to respawn point
-        player.transform.position = respawnPoint.position;
-        player.transform.rotation = respawnPoint.rotation;
-
-        // Restore full health
-        if (playerStats != null)
-        {
-            playerStats.currentHealth = playerStats.maxHealth;
-        }
-
-        // Optional: Reset player velocity if using Rigidbody
-        Rigidbody rb = player.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-    }
-
-    // Optional: Full scene reload alternative (uncomment and use instead of ResetEnemies/RespawnPlayer)
-    // private void ReloadScene()
-    // {
-    //     SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    // }
 }
