@@ -9,10 +9,12 @@ public class PlayerMovement : MonoBehaviour
     [Header("References")]
     [SerializeField] private CharacterController controller;
     [SerializeField] private Transform cam;
+    [SerializeField] private PlayerInventory playerInventory;
 
     private PlayerInput playerInput;
     private InputAction moveAction;
     private InputAction jumpAction;
+    private InputAction dashAction;
 
     // ─────────────────────────────────────────────
     //  Movement
@@ -47,16 +49,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float ledgeVaultForce = 13f;
     [SerializeField] private float hangSnapOffset = 1.5f;
     [SerializeField] private float hangActivationTolerance = 0.15f;
-    [SerializeField] private float vaultLungeDelay = 0.15f;   // Time before lunge allowed after vault
+    [SerializeField] private float vaultLungeDelay = 0.15f;
+
+    // For fresh forward press detection while hanging
+    private bool wasMovingForwardLastFrame;
+    private bool hasJustPressedForwardInHang;
 
     // ─────────────────────────────────────────────
-    //  Lock-On (set by external system)
+    //  Lock-On
     // ─────────────────────────────────────────────
     [HideInInspector] public bool isLockedOn;
     [HideInInspector] public Transform lockOnTarget;
 
     // ─────────────────────────────────────────────
-    //  Lunge (called by WeaponController)
+    //  Lunge Attack
     // ─────────────────────────────────────────────
     [Header("Lunge Attack")]
     [SerializeField] private float lungeForce = 18f;
@@ -66,6 +72,46 @@ public class PlayerMovement : MonoBehaviour
     private float lungeGravityTimer;
 
     // ─────────────────────────────────────────────
+    //  Dash
+    // ─────────────────────────────────────────────
+    [Header("Dash")]
+    [SerializeField] private AbilityData dashAbility;
+    [SerializeField] private float dashSpeed = 25f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 1f;
+    [SerializeField] private float dashExitBoostDecay = 0.3f;
+    [SerializeField] private float dashSteeringSpeed = 180f;
+    [SerializeField] private float dashFacingRotationSpeed = 360f;
+
+    [Header("Dash Gravity")]
+    [SerializeField] private float dashGravityReductionDuration = 0.1f;
+    [SerializeField] private float dashGravityMultiplier = 0.3f;
+
+    [Header("Dash Reverse Brake")]
+    [SerializeField] private float reverseBrakeDuration = 0.1f;
+    private float reverseBrakeTimer = 0f;
+
+    private bool isDashing;
+    private float dashStartTime;
+    private float dashEndTime;
+    private Vector3 dashDirection;
+    private float lastDashTime = -999f;
+    private bool dashedInAir;
+
+    // Speed boost after dash
+    private float currentSpeedMultiplier = 1f;
+    private float speedMultiplierDecay = 0f;
+    private Vector3 lastDashDirection;
+
+    // Jump buffering during dash
+    [Header("Dash Jump Buffer")]
+    [SerializeField] private float dashJumpBufferTime = 0.2f;
+    private float dashJumpBufferTimer = 0f;
+    private bool hasQueuedJumpDuringDash = false;
+
+    public bool IsDashing => isDashing;
+
+    // ─────────────────────────────────────────────
     //  Private state
     // ─────────────────────────────────────────────
     private Vector3 velocity;
@@ -73,12 +119,13 @@ public class PlayerMovement : MonoBehaviour
     private bool isJumping;
     private bool isHanging;
     private bool isVaultJump;
-    private bool vaultInputPressed;
 
     private float gravity;
     private float jumpForce;
     private float hangCooldownTimer;
     private float vaultCooldownTimer;
+
+    private bool controlsEnabled = true;
 
     // ─────────────────────────────────────────────
     //  Public state
@@ -86,7 +133,7 @@ public class PlayerMovement : MonoBehaviour
     public bool IsGrounded => isGrounded;
     public bool IsJumping  => isJumping;
     public bool IsHanging  => isHanging;
-    public bool CanLungeImmediately => vaultCooldownTimer <= 0f; 
+    public bool CanLungeImmediately => vaultCooldownTimer <= 0f;
 
     // ─────────────────────────────────────────────
     //  Coyote Time & Jump Buffer
@@ -105,6 +152,7 @@ public class PlayerMovement : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         moveAction  = playerInput.actions["Move"];
         jumpAction  = playerInput.actions["Jump"];
+        dashAction  = playerInput.actions["Dash"];
         RecalculateJumpPhysics();
     }
 
@@ -122,60 +170,159 @@ public class PlayerMovement : MonoBehaviour
         jumpForce =  (2f * jumpHeight) / timeToApex;
     }
     
-    public void SetVerticalVelocity(float y)
-    {
-        velocity.y = y;
-    }
+    public void SetVerticalVelocity(float y) => velocity.y = y;
     
     public void ResetVelocity()
     {
         velocity = Vector3.zero;
-
-        // Cancel any active timers that could suppress gravity or keep you airborne
         lungeGravityTimer = 0f;
         isJumping = false;
         isVaultJump = false;
-
-        // Prevent accidental jumps when regaining control
         jumpBufferTimer = 0f;
         coyoteTimer = 0f;
+        dashJumpBufferTimer = 0f;
+        hasQueuedJumpDuringDash = false;
     }
 
-    private void OnEnable()  { moveAction.Enable();  jumpAction.Enable();  }
-    private void OnDisable() { moveAction.Disable(); jumpAction.Disable(); }
+    public void SetControlsEnabled(bool enabled)
+    {
+        controlsEnabled = enabled;
+        if (!enabled)
+        {
+            jumpBufferTimer = 0f;
+            coyoteTimer = 0f;
+            dashJumpBufferTimer = 0f;
+            hasQueuedJumpDuringDash = false;
+        }
+    }
+
+    private void OnEnable()  { moveAction.Enable();  jumpAction.Enable(); dashAction.Enable(); }
+    private void OnDisable() { moveAction.Disable(); jumpAction.Disable(); dashAction.Disable(); }
 
     // ─────────────────────────────────────────────
     //  Update
     // ─────────────────────────────────────────────
     private void Update()
     {
-        // Get knockback reference once per frame (cached in Start would be fine too)
-        PlayerKnockback knockback = GetComponent<PlayerKnockback>();
-        bool isKnockedBack = (knockback != null && knockback.IsKnockedBack);
-
-        // Always handle grounding and ledge detection (so we know if we land)
         HandleGrounding();
 
-        // Timers
-        vaultCooldownTimer -= Time.deltaTime;
-
-        if (isKnockedBack)
+        if (!controlsEnabled)
         {
-            // Still apply gravity so we fall normally
             ApplyGravity();
             ClampFallSpeed();
             controller.Move(velocity * Time.deltaTime);
-            // Zero out horizontal velocity so we don't slide after knockback ends
-            velocity.x = 0f;
-            velocity.z = 0f;
             return;
         }
 
-        // --- Normal update below (unchanged) ---
-        if (moveAction.WasPressedThisFrame())
+        PlayerKnockback knockback = GetComponent<PlayerKnockback>();
+        bool isKnockedBack = (knockback != null && knockback.IsKnockedBack);
+
+        vaultCooldownTimer -= Time.deltaTime;
+
+        // --- Dash handling ---
+        if (isDashing)
         {
-            if (IsMovingTowardWall())
-                vaultInputPressed = true;
+            // Jump buffering during dash
+            if (jumpAction.WasPressedThisFrame())
+            {
+                hasQueuedJumpDuringDash = true;
+                dashJumpBufferTimer = dashJumpBufferTime;
+            }
+
+            float step = dashSpeed * Time.deltaTime;
+            controller.Move(dashDirection * step);
+            
+            // Custom gravity during dash
+            float dashTimeElapsed = Time.time - dashStartTime;
+            float gravityMultiplier = (dashTimeElapsed < dashGravityReductionDuration) ? dashGravityMultiplier : 1f;
+            velocity.y += gravity * gravityMultiplier * Time.deltaTime;
+            ClampFallSpeed();
+            
+            controller.Move(velocity * Time.deltaTime);
+            
+            SteerDash();
+            RotatePlayerTowardDashDirection();
+
+            // Check for ledge hang during dash – if detected, cancel dash and enter hang
+            // We only check if not already hanging and if we're moving toward a wall (forward)
+            if (!isHanging && IsMovingTowardWall())
+            {
+                // Temporarily store original positions for ledge detection
+                // We'll call HandleLedgeDetection() to see if we should grab
+                // But we need to avoid infinite recursion. We'll just run the detection logic manually.
+                CheckAndGrabLedgeDuringDash();
+            }
+
+            if (Time.time >= dashEndTime && !isHanging) // don't end dash if we transitioned to hang
+            {
+                isDashing = false;
+                TryActivateExitBoostOrBrake();
+            }
+            else if (isHanging)
+            {
+                // Dash is cancelled by ledge grab
+                CancelDash();
+            }
+            return;
+        }
+
+        // --- Decay dash jump buffer ---
+        if (hasQueuedJumpDuringDash)
+        {
+            dashJumpBufferTimer -= Time.deltaTime;
+            if (dashJumpBufferTimer <= 0f)
+                hasQueuedJumpDuringDash = false;
+        }
+
+        // --- Decay speed boost or reverse brake ---
+        if (reverseBrakeTimer > 0f)
+        {
+            reverseBrakeTimer -= Time.deltaTime;
+            currentSpeedMultiplier = 0f;
+            if (reverseBrakeTimer <= 0f)
+                currentSpeedMultiplier = 1f;
+        }
+        else if (speedMultiplierDecay > 0f)
+        {
+            if (!IsMovingForwardRelativeToDash())
+            {
+                currentSpeedMultiplier = 1f;
+                speedMultiplierDecay = 0f;
+            }
+            else
+            {
+                speedMultiplierDecay -= Time.deltaTime;
+                if (speedMultiplierDecay <= 0f)
+                    currentSpeedMultiplier = 1f;
+                else
+                    currentSpeedMultiplier = Mathf.Lerp(1f, dashSpeed / speed, speedMultiplierDecay / dashExitBoostDecay);
+            }
+        }
+
+        // --- Try to start a new dash ---
+        if (dashAction.WasPressedThisFrame() && CanDash())
+        {
+            StartDash();
+            return;
+        }
+
+        // --- Execute queued jump from dash ---
+        if (hasQueuedJumpDuringDash && CanJumpNow())
+        {
+            PerformJump();
+            hasQueuedJumpDuringDash = false;
+            dashJumpBufferTimer = 0f;
+        }
+
+        // --- Normal movement ---
+        if (isKnockedBack)
+        {
+            ApplyGravity();
+            ClampFallSpeed();
+            controller.Move(velocity * Time.deltaTime);
+            velocity.x = 0f;
+            velocity.z = 0f;
+            return;
         }
 
         if (isHanging)
@@ -200,8 +347,197 @@ public class PlayerMovement : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
     }
 
+    // Helper to check ledge grab during dash (copy of detection logic without side effects)
+    private void CheckAndGrabLedgeDuringDash()
+    {
+        if (isGrounded) return;
+        if (hangCooldownTimer > 0f) return;
+
+        Vector3 origin      = transform.position;
+        Vector3 aboveOrigin = origin + Vector3.up * ledgeCheckHeight;
+        Vector3 forward     = transform.forward;
+
+        RaycastHit wallHitInfo;
+        bool wallHit  = Physics.Raycast(origin,       forward, out wallHitInfo, ledgeReachDistance, ledgeLayerMask);
+        bool clearTop = !Physics.Raycast(aboveOrigin, forward, ledgeReachDistance, ledgeLayerMask);
+
+        if (!wallHit || !clearTop) return;
+
+        Vector3 downRayOrigin = aboveOrigin + forward * ledgeReachDistance;
+        RaycastHit surfaceHit;
+        float ledgeSurfaceY;
+        if (Physics.Raycast(downRayOrigin, Vector3.down, out surfaceHit, ledgeCheckHeight + 0.5f, ledgeLayerMask))
+            ledgeSurfaceY = surfaceHit.point.y;
+        else
+            ledgeSurfaceY = wallHitInfo.point.y;
+
+        float targetY = ledgeSurfaceY - hangSnapOffset;
+
+        if (Mathf.Abs(transform.position.y - targetY) <= hangActivationTolerance && velocity.y <= 0f)
+        {
+            // Enter hang immediately, cancel dash
+            EnterHang();
+        }
+    }
+
+    private void CancelDash()
+    {
+        isDashing = false;
+        // Reset any dash‑related timers
+        speedMultiplierDecay = 0f;
+        reverseBrakeTimer = 0f;
+        currentSpeedMultiplier = 1f;
+        // Optionally reset dash jump buffer
+        hasQueuedJumpDuringDash = false;
+        dashJumpBufferTimer = 0f;
+    }
+
+    // Helper to check if jump can be performed (grounded or coyote)
+    private bool CanJumpNow()
+    {
+        return isGrounded || coyoteTimer > 0f;
+    }
+
+    private void PerformJump()
+    {
+        velocity.y = jumpForce;
+        isJumping = true;
+        coyoteTimer = 0f;
+        jumpBufferTimer = 0f;
+    }
+
     // ─────────────────────────────────────────────
-    //  Grounding
+    //  Exit Boost or Reverse Brake
+    // ─────────────────────────────────────────────
+    private void TryActivateExitBoostOrBrake()
+    {
+        Vector2 moveInput = moveAction.ReadValue<Vector2>();
+        if (moveInput.magnitude < 0.1f)
+        {
+            currentSpeedMultiplier = 1f;
+            speedMultiplierDecay = 0f;
+            reverseBrakeTimer = 0f;
+            return;
+        }
+
+        float camYaw = cam.eulerAngles.y;
+        Vector3 desiredDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(moveInput.x, 0f, moveInput.y);
+        desiredDir.Normalize();
+
+        float angle = Vector3.Angle(dashDirection, desiredDir);
+        if (angle < 90f)   // forward or slight turn → boost
+        {
+            speedMultiplierDecay = dashExitBoostDecay;
+            currentSpeedMultiplier = dashSpeed / speed;
+            lastDashDirection = dashDirection;
+            reverseBrakeTimer = 0f;
+        }
+        else               // hard turn (≥90°) → brake
+        {
+            reverseBrakeTimer = reverseBrakeDuration;
+            currentSpeedMultiplier = 0f;
+            speedMultiplierDecay = 0f;
+        }
+    }
+
+    private bool IsMovingForwardRelativeToDash()
+    {
+        Vector2 moveInput = moveAction.ReadValue<Vector2>();
+        if (moveInput.magnitude < 0.1f) return false;
+
+        float camYaw = cam.eulerAngles.y;
+        Vector3 desiredDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(moveInput.x, 0f, moveInput.y);
+        desiredDir.Normalize();
+
+        float angle = Vector3.Angle(lastDashDirection, desiredDir);
+        return angle < 90f;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Dash Steering and Facing
+    // ─────────────────────────────────────────────
+    private void SteerDash()
+    {
+        Vector2 moveInput = moveAction.ReadValue<Vector2>();
+        if (moveInput.magnitude < 0.1f) return;
+        
+        float camYaw = cam.eulerAngles.y;
+        Vector3 desiredDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(moveInput.x, 0f, moveInput.y);
+        desiredDir.Normalize();
+        
+        float angle = Vector3.SignedAngle(dashDirection, desiredDir, Vector3.up);
+        float maxTurn = dashSteeringSpeed * Time.deltaTime;
+        float turnAngle = Mathf.Clamp(angle, -maxTurn, maxTurn);
+        
+        dashDirection = Quaternion.Euler(0f, turnAngle, 0f) * dashDirection;
+        dashDirection.Normalize();
+    }
+
+    private void RotatePlayerTowardDashDirection()
+    {
+        if (dashDirection.magnitude < 0.01f) return;
+        Quaternion targetRotation = Quaternion.LookRotation(dashDirection);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            dashFacingRotationSpeed * Time.deltaTime
+        );
+    }
+
+    // ─────────────────────────────────────────────
+    //  Dash helpers
+    // ─────────────────────────────────────────────
+    private bool CanDash()
+    {
+        if (playerInventory == null) return false;
+        if (!playerInventory.HasAbility(dashAbility)) return false;
+        if (Time.time < lastDashTime + dashCooldown) return false;
+        if (isDashing) return false;
+        if (!isGrounded && dashedInAir) return false;
+        return true;
+    }
+
+    private void StartDash()
+    {
+        Vector2 moveInput = moveAction.ReadValue<Vector2>();
+        Vector3 dashDir;
+
+        if (moveInput.magnitude > 0.1f)
+        {
+            float camYaw = cam.eulerAngles.y;
+            Vector3 moveDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(moveInput.x, 0f, moveInput.y);
+            dashDir = moveDir.normalized;
+        }
+        else
+        {
+            dashDir = transform.forward;
+        }
+
+        isDashing = true;
+        dashStartTime = Time.time;
+        dashDirection = dashDir;
+        dashEndTime = Time.time + dashDuration;
+        lastDashTime = Time.time;
+
+        transform.rotation = Quaternion.LookRotation(dashDirection);
+
+        if (!isGrounded)
+            dashedInAir = true;
+
+        if (isJumping) isJumping = false;
+        if (isHanging) ExitHang();
+        velocity.y = 0f;
+
+        // Cancel any leftover boost/brake
+        currentSpeedMultiplier = 1f;
+        speedMultiplierDecay = 0f;
+        reverseBrakeTimer = 0f;
+        hasQueuedJumpDuringDash = false;
+        dashJumpBufferTimer = 0f;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Grounding (resets air dash flag)
     // ─────────────────────────────────────────────
     private void HandleGrounding()
     {
@@ -210,6 +546,7 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded)
         {
             coyoteTimer = coyoteTime;
+            dashedInAir = false;
 
             if (velocity.y < 0f)
             {
@@ -218,7 +555,6 @@ public class PlayerMovement : MonoBehaviour
             }
 
             if (isHanging) ExitHang();
-
             isVaultJump = false;
         }
         else
@@ -264,21 +600,30 @@ public class PlayerMovement : MonoBehaviour
         isHanging = true;
         isJumping = false;
         velocity  = Vector3.zero;
+
+        // Reset air dash allowance so you can dash again after hanging
+        dashedInAir = false;
+
+        // Record forward input state for fresh press detection
+        wasMovingForwardLastFrame = IsMovingTowardWall();
+        hasJustPressedForwardInHang = false;
     }
 
     private void ExitHang()
     {
         isHanging         = false;
         hangCooldownTimer = 0.3f;
-        vaultInputPressed = false;
+        // Reset for next hang
+        wasMovingForwardLastFrame = false;
+        hasJustPressedForwardInHang = false;
     }
 
     // ─────────────────────────────────────────────
-    //  Hang inputs
+    //  Hang inputs (no buffering, only fresh press)
     // ─────────────────────────────────────────────
     private void HandleHang()
     {
-        // Drop: pressing S (backward relative to player facing)
+        // Drop: pressing S (backward)
         if (IsMovingBackward())
         {
             ExitHang();
@@ -287,30 +632,32 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Vault: movement key toward wall (buffered) OR Space pressed this frame
-        bool vaultViaMovement = vaultInputPressed;
+        // --- Fresh forward press detection ---
+        bool currentlyMovingForward = IsMovingTowardWall();
+        if (currentlyMovingForward && !wasMovingForwardLastFrame)
+            hasJustPressedForwardInHang = true;
+        wasMovingForwardLastFrame = currentlyMovingForward;
+
+        // Vault via movement (only if we pressed forward while hanging)
+        bool vaultViaMovement = hasJustPressedForwardInHang;
         bool vaultViaJump     = jumpAction.WasPressedThisFrame();
 
         if (vaultViaMovement || vaultViaJump)
         {
-            vaultInputPressed = false;
-
-            // Prevent accidental normal jump from firing after vault
+            // Clear any pending jump buffer to avoid double vault
             jumpBufferTimer = 0f;
             coyoteTimer     = 0f;
             vaultCooldownTimer = vaultLungeDelay;
 
             ExitHang();
             velocity.y = ledgeVaultForce;
-            isVaultJump = true;          // bypass short‑hop gravity, full height
-            // isJumping stays false → allows lunge after cooldown
+            isVaultJump = true;
             controller.Move(velocity * Time.deltaTime);
+            // Reset the flag so you can't vault again without a new press
+            hasJustPressedForwardInHang = false;
         }
     }
 
-    /// <summary>
-    /// Returns true if the player is pressing the key that would move them backward.
-    /// </summary>
     private bool IsMovingBackward()
     {
         Vector2 input = moveAction.ReadValue<Vector2>();
@@ -323,10 +670,6 @@ public class PlayerMovement : MonoBehaviour
         return Vector3.Dot(moveDir, transform.forward) < -0.5f;
     }
 
-    /// <summary>
-    /// Returns true if the player is pressing the key that would move them toward the wall
-    /// (forward relative to player facing).
-    /// </summary>
     private bool IsMovingTowardWall()
     {
         Vector2 input = moveAction.ReadValue<Vector2>();
@@ -348,6 +691,8 @@ public class PlayerMovement : MonoBehaviour
         float   horizontal = input.x;
         float   vertical   = input.y;
         Vector3 direction  = new Vector3(horizontal, 0f, vertical).normalized;
+
+        float effectiveSpeed = speed * currentSpeedMultiplier;
 
         if (!isLockedOn)
         {
@@ -372,7 +717,7 @@ public class PlayerMovement : MonoBehaviour
 
                 transform.rotation = Quaternion.Euler(0f, angle, 0f);
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                controller.Move(moveDir.normalized * speed * Time.deltaTime);
+                controller.Move(moveDir.normalized * effectiveSpeed * Time.deltaTime);
             }
         }
         else
@@ -385,12 +730,12 @@ public class PlayerMovement : MonoBehaviour
                 Time.deltaTime * 10f);
 
             Vector3 moveDir = transform.right * horizontal + transform.forward * vertical;
-            controller.Move(moveDir.normalized * speed * Time.deltaTime);
+            controller.Move(moveDir.normalized * effectiveSpeed * Time.deltaTime);
         }
     }
 
     // ─────────────────────────────────────────────
-    //  Jump Buffer
+    //  Jump Buffer (normal)
     // ─────────────────────────────────────────────
     private void HandleJumpBuffer()
     {
@@ -401,7 +746,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    //  Jump
+    //  Jump (normal)
     // ─────────────────────────────────────────────
     private void HandleJump()
     {
@@ -413,13 +758,12 @@ public class PlayerMovement : MonoBehaviour
             coyoteTimer     = 0f;
         }
 
-        // Only cancel jump on release if it's NOT a vault jump
         if (jumpAction.WasReleasedThisFrame() && isJumping && velocity.y > 0f && !isVaultJump)
             isJumping = false;
     }
 
     // ─────────────────────────────────────────────
-    //  Gravity
+    //  Gravity (normal)
     // ─────────────────────────────────────────────
     private void ApplyGravity()
     {
@@ -437,7 +781,7 @@ public class PlayerMovement : MonoBehaviour
             velocity.y += gravity * Time.deltaTime;
     }
 
-    private void ClampFallSpeed()
+    private void ClampFallSpeed()   
     {
         if (velocity.y < maxFallSpeed)
             velocity.y = maxFallSpeed;

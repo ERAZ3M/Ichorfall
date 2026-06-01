@@ -6,10 +6,11 @@ public class PlayerKnockback : MonoBehaviour
 {
     [SerializeField] private float knockbackForce = 5f;
     [SerializeField] private float knockbackDuration = 0.2f;
-    [SerializeField] private float knockbackUpwardForce = 5f;  // NEW: upward launch strength
+    [SerializeField] private float knockbackUpwardForce = 5f;
 
     private CharacterController controller;
     private PlayerMovement playerMovement;
+    private PlayerStats playerStats;   // <-- add this
     private bool isKnockedBack;
 
     public bool IsKnockedBack => isKnockedBack;
@@ -18,10 +19,14 @@ public class PlayerKnockback : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         playerMovement = GetComponent<PlayerMovement>();
+        playerStats = GetComponent<PlayerStats>();   // <-- get reference
     }
 
     public void ApplyKnockback(Vector3 direction, float forceMultiplier = 1f)
     {
+        // Don't start a new knockback if the player is already dead
+        if (playerStats != null && playerStats.IsDead) return;
+
         if (!isKnockedBack)
             StartCoroutine(KnockbackRoutine(direction, knockbackForce * forceMultiplier));
     }
@@ -30,12 +35,8 @@ public class PlayerKnockback : MonoBehaviour
     {
         isKnockedBack = true;
 
-        // Kill any existing momentum so the knockback feels crisp
         playerMovement.ResetVelocity();
-
-        // ADD: Launch the player upward like a jump
-        // Multiply by forceMultiplier if you want the upward force to scale with knockback strength
-        float upward = knockbackUpwardForce; // * (force / knockbackForce) optional scaling
+        float upward = knockbackUpwardForce;
         playerMovement.SetVerticalVelocity(upward);
 
         direction.y = 0f;
@@ -44,7 +45,6 @@ public class PlayerKnockback : MonoBehaviour
         float timer = 0f;
         while (timer < knockbackDuration)
         {
-            // Move horizontally each frame – gravity is still applied by PlayerMovement
             Vector3 move = direction * (force * Time.deltaTime / knockbackDuration);
             controller.Move(move);
             timer += Time.deltaTime;

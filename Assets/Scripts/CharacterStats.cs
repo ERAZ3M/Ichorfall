@@ -14,13 +14,16 @@ public class CharacterStats : MonoBehaviour
     [Header("Hit Freeze (Player only)")]
     [SerializeField] private float hitFreezeDuration = 0.05f; // about 1-3 frames at 60fps
     private bool isHitFrozen = false;
+    
+    [Header("Death")]
+    [SerializeField] private float deathDelay = 2f;
 
     void Awake()
     {
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(int damage)
+    public virtual void TakeDamage(int damage)
     {
         // Only apply hit freeze to the player, and only if not already frozen
         if (CompareTag("Player") && !isHitFrozen && damage > 0)
@@ -72,7 +75,7 @@ public class CharacterStats : MonoBehaviour
             {
                 Collider col = GetComponent<Collider>();
                 if (col != null) col.enabled = false;
-                Destroy(gameObject, 2f);
+                Destroy(gameObject, deathDelay);
             }
         }
     }

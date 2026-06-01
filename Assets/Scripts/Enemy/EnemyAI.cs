@@ -22,6 +22,14 @@ public class EnemyAI : MonoBehaviour
     public float patrolWaitTimeMin = 1f;
     public float patrolWaitTimeMax = 3f;
 
+    [Header("Ledge Avoidance")]
+    [Tooltip("Distance forward to check for ground before moving")]
+    public float ledgeCheckDistance = 0.8f;
+    [Tooltip("Layers considered as ground (usually Default and ground layers)")]
+    public LayerMask groundLayers = ~0;
+    [Tooltip("If player's Y is lower than enemy's Y by this much, stop chasing (prevents jitter at cliffs)")]
+    public float minHeightDifferenceForLedge = 1.5f;
+
     [Header("Detection")]
     public float detectionRange = 10f;
     public float attackRange = 2f;
@@ -90,12 +98,12 @@ public class EnemyAI : MonoBehaviour
         {
             case State.Idle:
                 HandleIdle();
-                if (canSeePlayer)
+                if (canSeePlayer && !IsPlayerBelowLedge())
                     ChangeState(State.Chase);
                 break;
             case State.Patrol:
                 HandlePatrol();
-                if (canSeePlayer)
+                if (canSeePlayer && !IsPlayerBelowLedge())
                     ChangeState(State.Chase);
                 break;
             case State.Chase:
@@ -105,6 +113,8 @@ public class EnemyAI : MonoBehaviour
                     ChangeState(State.Idle);
                 else if (dist <= attackRange && Time.time > lastAttackTime + attackCooldown && !isHurt)
                     ChangeState(State.Attack);
+                else if (IsPlayerBelowLedge())
+                    ChangeState(State.Idle);  // Stop chasing if player is below a ledge
                 break;
             case State.Attack:
                 HandleAttack();
@@ -115,6 +125,14 @@ public class EnemyAI : MonoBehaviour
         }
 
         SyncAnimator();
+    }
+
+    // ------- Helper: Detect if player is unreachable because they are too low -------
+    private bool IsPlayerBelowLedge()
+    {
+        if (player == null) return false;
+        // If player is significantly lower than the enemy, treat as "below ledge"
+        return player.position.y < transform.position.y - minHeightDifferenceForLedge;
     }
 
     // ------- STATE CHANGES -------
@@ -164,7 +182,7 @@ public class EnemyAI : MonoBehaviour
         if (patrolWaiting)
         {
             patrolWaitTimer -= Time.deltaTime;
-            isMoving = false;   // <-- ensure Idle pose
+            isMoving = false;
             if (patrolWaitTimer <= 0f)
             {
                 patrolWaiting = false;
@@ -209,7 +227,7 @@ public class EnemyAI : MonoBehaviour
                 float dist = Vector3.Distance(transform.position, player.position);
                 if (dist <= attackRange && Time.time > lastAttackTime + attackCooldown)
                     ChangeState(State.Attack);
-                else if (dist <= detectionRange)
+                else if (dist <= detectionRange && !IsPlayerBelowLedge())
                     ChangeState(State.Chase);
                 else
                     ChangeState(State.Idle);
@@ -226,20 +244,35 @@ public class EnemyAI : MonoBehaviour
         hurtTimer -= Time.deltaTime;
         if (hurtTimer <= 0f)
         {
-            if (player != null && Vector3.Distance(transform.position, player.position) <= detectionRange)
+            if (player != null && Vector3.Distance(transform.position, player.position) <= detectionRange && !IsPlayerBelowLedge())
                 ChangeState(State.Chase);
             else
                 ChangeState(State.Idle);
         }
     }
 
-    // ------- MOVEMENT -------
+    // ------- MOVEMENT with Ledge Avoidance -------
     void MoveEnemy(Vector3 direction, float speed)
     {
         direction.y = 0;
         if (direction.magnitude > 0.05f)
         {
             direction.Normalize();
+
+            // Check for ledge ahead before moving
+            if (!IsGroundedAhead(direction))
+            {
+                // No ground ahead → stop moving
+                isMoving = false;
+                
+                // If in patrol mode and stuck at ledge, pick a new patrol target to avoid being frozen
+                if (currentState == State.Patrol)
+                {
+                    PickNewPatrolTarget();
+                }
+                return;
+            }
+
             Vector3 move = direction * speed * Time.deltaTime;
             if (!controller.isGrounded)
                 move.y -= 9.81f * Time.deltaTime;
@@ -249,6 +282,33 @@ public class EnemyAI : MonoBehaviour
         else
         {
             isMoving = false;
+        }
+    }
+
+    /// <summary>
+    /// Checks if there is ground directly ahead of the enemy within a short distance.
+    /// </summary>
+    /// <param name="direction">Normalized movement direction (horizontal only).</param>
+    /// <returns>True if ground exists ahead, false if enemy would walk off a ledge.</returns>
+    private bool IsGroundedAhead(Vector3 direction)
+    {
+        // Cast a ray from a point at the enemy's feet forward by ledgeCheckDistance,
+        // then downward to detect ground.
+        float checkHeight = 0.2f; // Slightly above the bottom of the capsule
+        Vector3 rayOrigin = transform.position + Vector3.up * checkHeight;
+        Vector3 forwardOffset = direction * ledgeCheckDistance;
+
+        // Ray downward from the point ahead
+        RaycastHit hit;
+        if (Physics.Raycast(rayOrigin + forwardOffset, Vector3.down, out hit, 2f, groundLayers))
+        {
+            // Ground found ahead
+            return true;
+        }
+        else
+        {
+            // No ground → would fall
+            return false;
         }
     }
 
@@ -269,7 +329,6 @@ public class EnemyAI : MonoBehaviour
     void SyncAnimator()
     {
         if (anim == null) return;
-        // Only set IsWalking when actually moving
         bool shouldWalk = (currentState == State.Chase || currentState == State.Patrol) && isMoving;
         anim.SetBool("IsWalking", shouldWalk);
     }
@@ -284,7 +343,6 @@ public class EnemyAI : MonoBehaviour
             playerStats.TakeDamage(contactDamage);
             lastContactDamageTime = Time.time;
 
-            // Knockback – use playerStats.gameObject to get the component
             PlayerKnockback knockback = playerStats.GetComponent<PlayerKnockback>();
             if (knockback != null)
             {
@@ -293,6 +351,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
     }
+
     // ------- PUBLIC DAMAGE METHODS -------
     public void TakeDamage(int damage)
     {
@@ -311,24 +370,19 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // This is called by your CollisionDetection script
     public void TakeHit(Vector3 hitPoint)
     {
         if (currentState == State.Dead)
             return;
 
-        // The actual damage is already applied by CharacterStats.TakeDamage.
-        // Here we just ensure the hurt animation plays (if not already hurt).
         if (currentState != State.Hurt)
             ChangeState(State.Hurt);
-
-        // Optional: you could add knockback using (transform.position - hitPoint) later.
     }
     
     public void Die()
     {
         if (currentState == State.Dead)
-            return; // already dead, nothing to do
+            return;
 
         ChangeState(State.Dead);
         StartCoroutine(DeathRoutine());
@@ -336,23 +390,19 @@ public class EnemyAI : MonoBehaviour
     
     private void DisableAllHitboxes()
     {
-        // Find all EnemyHitbox scripts in children (on the body and hands)
         EnemyHitbox[] hitboxes = GetComponentsInChildren<EnemyHitbox>();
         foreach (EnemyHitbox hb in hitboxes)
         {
-            // Disable the whole hitbox GameObject so the trigger won't fire
             hb.gameObject.SetActive(false);
         }
     }
 
     private IEnumerator DeathRoutine()
     {
-        // Wait for the death animation to finish
         yield return new WaitForSeconds(deathAnimationLength);
 
-        // --- Sink effect ---
         float sinkDuration = 2f;
-        float sinkDistance = 3f;             // How far down to sink (in world units)
+        float sinkDistance = 3f;
         float startTime = Time.time;
         float startY = transform.position.y;
         float targetY = startY - sinkDistance;
@@ -365,19 +415,22 @@ public class EnemyAI : MonoBehaviour
             yield return null;
         }
 
-        // Snap to final position
         transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
-
-        // Optionally, wait a tiny bit more or just destroy
         Destroy(gameObject);
     }
 
-    // Optional: draw detection/attack ranges in the editor
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
+        
+        // Visualize ledge check ray when selected
+        Gizmos.color = Color.cyan;
+        Vector3 checkOrigin = transform.position + Vector3.up * 0.2f;
+        Vector3 forwardDir = transform.forward * ledgeCheckDistance;
+        Gizmos.DrawLine(checkOrigin, checkOrigin + forwardDir);
+        Gizmos.DrawLine(checkOrigin + forwardDir, checkOrigin + forwardDir + Vector3.down * 2f);
     }
 }

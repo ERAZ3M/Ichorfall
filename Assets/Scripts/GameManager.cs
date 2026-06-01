@@ -64,12 +64,12 @@ public class GameManager : MonoBehaviour
         if (playerActionMap != null)
             playerActionMap.Disable();
 
-        // Disable movement & combat scripts
+        // Disable combat script and movement input (keep PlayerMovement alive for gravity!)
         WeaponController wc = player.GetComponent<WeaponController>();
         if (wc != null) wc.enabled = false;
 
         PlayerMovement pm = player.GetComponent<PlayerMovement>();
-        if (pm != null) pm.enabled = false;
+        if (pm != null) pm.SetControlsEnabled(false);   // disables input, but gravity keeps working
 
         // 2. Death animation placeholder (3 seconds realtime)
         yield return new WaitForSecondsRealtime(3f);
@@ -105,7 +105,11 @@ public class GameManager : MonoBehaviour
 
         // 4. Re-enable scripts and input
         if (wc != null) wc.enabled = true;
-        if (pm != null) pm.enabled = true;
+        if (pm != null)
+        {
+            pm.SetControlsEnabled(true);
+            pm.ResetVelocity();   // optional, but safe
+        }
         if (playerActionMap != null)
             playerActionMap.Enable();
 
