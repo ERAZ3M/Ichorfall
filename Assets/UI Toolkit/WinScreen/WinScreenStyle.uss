@@ -1,0 +1,84 @@
+/* ===== MAIN CONTAINER ===== */
+.win-container {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(15, 5, 5);
+}
+
+/* ===== DECORATIVE ACCENTS (blood splatter effect) ===== */
+.blood-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background-color: rgb(140, 20, 10);
+    opacity: 0.6;
+}
+
+.bottom-accent {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background-color: rgb(140, 20, 10);
+    opacity: 0.6;
+}
+
+/* ===== TITLE (custom for win screen) ===== */
+.win-title {
+    font-size: 72px;
+    -unity-font-style: bold;
+    color: rgb(220, 180, 40);   /* gold / divine color */
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(100, 30, 20);
+    margin-bottom: 10px;
+    letter-spacing: 8px;
+}
+
+.subtitle {
+    font-size: 20px;
+    color: rgb(220, 180, 100);
+    letter-spacing: 6px;
+    margin-bottom: 60px;
+}
+
+/* ===== BUTTON CONTAINER ===== */
+.button-container {
+    flex-direction: column;
+    align-items: center;
+    width: 280px;
+}
+
+/* ===== BUTTONS (identical to main menu) ===== */
+.menu-button {
+    height: 56px;
+    width: 100%;
+    margin: 8px 0;
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(230, 200, 160);
+    background-color: rgb(60, 10, 10);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-color: rgb(140, 40, 20);
+    border-radius: 4px;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(100, 20, 10);
+    letter-spacing: 4px;
+}
+
+.menu-button:hover {
+    background-color: rgb(100, 20, 20);
+    border-color: rgb(220, 120, 20);
+    color: rgb(255, 230, 180);
+}
+
+.menu-button:active {
+    background-color: rgb(40, 5, 5);
+    border-color: rgb(200, 80, 30);
+}

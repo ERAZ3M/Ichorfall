@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: LungeAbility
   m_EditorClassIdentifier: Assembly-CSharp::AbilityData
   abilityName: Lunge
-  description: Press space in the air to perform a lunge, pushing you to higher heights.
-  icon: {fileID: 0}
+  description: Press [space] in the air to perform a lunge, pushing you to higher
+    heights.
+  icon: {fileID: 21300000, guid: 0d7f577e1d93f6a49ad672c6d74b37e9, type: 3}

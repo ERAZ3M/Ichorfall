@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/WinScreen/WinScreenStyle.uss?fileID=7433441132597879392&amp;guid=05407a9535cb82442806fd969c9a6064&amp;type=3#WinScreenStyle"/>
+    <ui:VisualElement class="win-container">
+        <ui:Label text="VICTORY" class="win-title"/>
+        <ui:Label text="THE GODS HAVE FALLEN" class="subtitle"/>
+        <ui:VisualElement class="button-container">
+            <ui:Button text="MAIN MENU" name="MainMenuButton" class="menu-button"/>
+            <ui:Button text="QUIT" name="QuitButton" class="menu-button"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AbilityData
   abilityName: Dash
   description: Press [shift] to dash across gaps.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 12b887e0dbdc33e4d9afc8222ae67fe2, type: 3}

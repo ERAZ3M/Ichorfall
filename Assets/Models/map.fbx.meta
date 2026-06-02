@@ -22,6 +22,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: floor2
+    second: {fileID: 2100000, guid: 3e7af8fc8764db4489d436a8d9ef0e0d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: pedestal
     second: {fileID: 2100000, guid: 2ae085d43f8a8f54288338c9b9df70c4, type: 2}
   - first:
@@ -29,6 +34,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: wall
     second: {fileID: 2100000, guid: 96c33d3b0b6ce3a48a55de85eeb442fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wall2
+    second: {fileID: 2100000, guid: d1412f8f0be0bb449b50868b5c935b8d, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
