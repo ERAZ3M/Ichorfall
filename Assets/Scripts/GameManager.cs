@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,10 +9,8 @@ public class GameManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private GameObject player;
-    [SerializeField] private EnemySpawner enemySpawner;
     [SerializeField] private FadeController fadeController;
 
-    private Transform respawnPoint;
     private CharacterStats playerStats;
     private bool isRespawning = false;
 
@@ -31,13 +30,6 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // Find respawn point
-        GameObject respawnObject = GameObject.FindGameObjectWithTag("Respawn");
-        if (respawnObject != null)
-            respawnPoint = respawnObject.transform;
-        else
-            Debug.LogError("GameManager: No Respawn point found!");
-
         if (player != null)
         {
             playerStats = player.GetComponent<CharacterStats>();
@@ -48,6 +40,10 @@ public class GameManager : MonoBehaviour
 
         if (fadeController == null)
             fadeController = FindObjectOfType<FadeController>();
+
+        // Fade in from black when the scene starts (including after death reload)
+        if (fadeController != null)
+            fadeController.FadeIn(1f);
     }
 
     public void OnPlayerDied()
@@ -60,59 +56,19 @@ public class GameManager : MonoBehaviour
     {
         isRespawning = true;
 
-        // 1. Disable gameplay input (keep UI input alive)
-        if (playerActionMap != null)
-            playerActionMap.Disable();
+        yield return new WaitForSecondsRealtime(0.5f);
 
-        // Disable combat script and movement input (keep PlayerMovement alive for gravity!)
-        WeaponController wc = player.GetComponent<WeaponController>();
-        if (wc != null) wc.enabled = false;
-
-        PlayerMovement pm = player.GetComponent<PlayerMovement>();
-        if (pm != null) pm.SetControlsEnabled(false);   // disables input, but gravity keeps working
-
-        // 2. Death animation placeholder (3 seconds realtime)
-        yield return new WaitForSecondsRealtime(3f);
-
-        // 3. Fade out, reset world, fade in
-        yield return StartCoroutine(fadeController.FadeOutIn(1f, 0.2f, 1f, () =>
+        // Fade out, then reload
+        if (fadeController != null)
         {
-            // Destroy all enemies
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-            foreach (GameObject enemy in enemies)
-                Destroy(enemy);
-
-            // Respawn enemies via spawner
-            if (enemySpawner != null)
-                enemySpawner.SpawnEnemies();
-            else
-                Debug.LogError("EnemySpawner missing!");
-
-            // Teleport player & restore health
-            if (player != null && respawnPoint != null)
+            fadeController.FadeOut(0.8f, () =>
             {
-                CharacterController cc = player.GetComponent<CharacterController>();
-                if (cc != null) cc.enabled = false;
-                player.transform.position = respawnPoint.position;
-                player.transform.rotation = respawnPoint.rotation;
-                if (cc != null) cc.enabled = true;
-
-                if (pm != null) pm.ResetVelocity();
-                if (playerStats != null)
-                    playerStats.ResetHealth();
-            }
-        }));
-
-        // 4. Re-enable scripts and input
-        if (wc != null) wc.enabled = true;
-        if (pm != null)
-        {
-            pm.SetControlsEnabled(true);
-            pm.ResetVelocity();   // optional, but safe
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            });
         }
-        if (playerActionMap != null)
-            playerActionMap.Enable();
-
-        isRespawning = false;
+        else
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
     }
 }

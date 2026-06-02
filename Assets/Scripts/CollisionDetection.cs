@@ -12,6 +12,7 @@ public class CollisionDetection : MonoBehaviour
     
     void OnTriggerEnter(Collider other)
     {
+        if (wc == null) return;
         bool anyAttack = wc.isAttacking || wc.isLunging;
         if (other.CompareTag("Enemy") && anyAttack &&  !enemiesHit.Contains(other))
         {

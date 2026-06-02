@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 public class AbilityPopupController : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private UIDocument abilityPopUpDocument;   // Drag your UIDocument here
+    [SerializeField] private UIDocument abilityPopUpDocument;
 
     private VisualElement container;
     private Image abilityIcon;

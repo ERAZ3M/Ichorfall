@@ -3,12 +3,12 @@ using UnityEngine;
 public class AbilityRandomSpawner : MonoBehaviour
 {
     [Header("Lunge Settings")]
-    [SerializeField] private GameObject lungePickupPrefab;   // Prefab with AbilityUnlock (Lunge)
-    [SerializeField] private Transform[] lungeSpawnPoints;   // Markers for possible Lunge spawn locations
+    [SerializeField] private GameObject lungePickupPrefab;
+    [SerializeField] private Transform[] lungeSpawnPoints;
 
     [Header("Dash Settings")]
-    [SerializeField] private GameObject dashPickupPrefab;    // Prefab with AbilityUnlock (Dash)
-    [SerializeField] private Transform[] dashSpawnPoints;    // Markers for possible Dash spawn locations
+    [SerializeField] private GameObject dashPickupPrefab;
+    [SerializeField] private Transform[] dashSpawnPoints;
 
     private void Start()
     {

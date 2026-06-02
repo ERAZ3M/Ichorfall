@@ -7,5 +7,5 @@ public class AbilityData : ScriptableObject
     [TextArea(3, 5)]
     public string description;
     public Sprite icon;
-    // You can add more fields like ability type, required slot, etc.
+    
 }

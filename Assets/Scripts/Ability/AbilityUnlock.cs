@@ -9,8 +9,7 @@ public class AbilityUnlock : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-
-        // If not assigned, try to find it
+        
         if (popupController == null)
             popupController = FindObjectOfType<AbilityPopupController>();
 
