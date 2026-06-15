@@ -7,7 +7,6 @@ public class Checkpoint : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             GameManager.Instance.SetCheckpoint(other.transform.position);
-            GetComponent<Collider>().enabled = false; // disable trigger after use
         }
     }
 }

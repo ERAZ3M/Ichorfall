@@ -211,6 +211,14 @@ PrefabInstance:
       value: ReptileEnemy
       objectReference: {fileID: 0}
     - target: {fileID: 8309705082292318418, guid: 8897492b9fb2b054ea4af376c11ce619, type: 3}
+      propertyPath: walkSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8309705082292318418, guid: 8897492b9fb2b054ea4af376c11ce619, type: 3}
+      propertyPath: chaseSpeed
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8309705082292318418, guid: 8897492b9fb2b054ea4af376c11ce619, type: 3}
       propertyPath: contactDamageCooldown
       value: 1
       objectReference: {fileID: 0}

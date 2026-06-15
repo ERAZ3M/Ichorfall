@@ -1,49 +1,9 @@
 fileFormatVersion: 2
-guid: 4b29fe7e0503b8b419037fc340a73d4e
+guid: 625e9fc0e2ea74f40a774bbcd7cd1a7d
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: arch
-    second: {fileID: 2100000, guid: 45dbc6567eba14847a62a29e954877b2, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: cracked_wall
-    second: {fileID: 2100000, guid: 85f3981336624404b9b3203e6826882c, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: floor
-    second: {fileID: 2100000, guid: 93e9897ed398a164cb242ec0c1a031c4, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: floor2
-    second: {fileID: 2100000, guid: 3e7af8fc8764db4489d436a8d9ef0e0d, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: lava
-    second: {fileID: 2100000, guid: 552ed45d8cacac344b1dbc674bac5e1f, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: pedestal
-    second: {fileID: 2100000, guid: 2ae085d43f8a8f54288338c9b9df70c4, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: wall
-    second: {fileID: 2100000, guid: 96c33d3b0b6ce3a48a55de85eeb442fe, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: wall2
-    second: {fileID: 2100000, guid: d1412f8f0be0bb449b50868b5c935b8d, type: 2}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0

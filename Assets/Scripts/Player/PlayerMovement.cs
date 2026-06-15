@@ -158,6 +158,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         weaponController = GetComponent<WeaponController>();
     }
 

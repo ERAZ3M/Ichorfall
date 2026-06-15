@@ -75,8 +75,8 @@ public class PauseMenuController : MonoBehaviour
         isPaused = true;
         pauseContainer.style.display = DisplayStyle.Flex;
 
-        // Mute all audio
-        AudioListener.pause = true;
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
 
         // Disable gameplay input so player can’t move/attack while paused
         if (playerActionMap != null)
@@ -89,9 +89,9 @@ public class PauseMenuController : MonoBehaviour
         isPaused = false;
         pauseContainer.style.display = DisplayStyle.None;
 
-        // Unmute audio
-        AudioListener.pause = false;
-
+        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+        UnityEngine.Cursor.visible = false;
+        
         // Re-enable gameplay input
         if (playerActionMap != null)
             playerActionMap.Enable();
@@ -99,6 +99,9 @@ public class PauseMenuController : MonoBehaviour
 
     private void GoToMainMenu()
     {
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+        
         Time.timeScale = 1f;
         AudioListener.pause = false;
         SceneManager.LoadScene("MainMenu");

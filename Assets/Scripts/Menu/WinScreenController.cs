@@ -23,7 +23,7 @@ public class WinScreenController : MonoBehaviour
     {
         if (winDocument == null)
         {
-            Debug.LogError("WinScreenController: No UIDocument assigned!");
+            Debug.LogError("No UIDocument assigned");
             return;
         }
 
@@ -72,9 +72,11 @@ public class WinScreenController : MonoBehaviour
     {
         if (isWinScreenActive) return;
 
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+        
         // Pause game
         Time.timeScale = 0f;
-        AudioListener.pause = true;
 
         // Disable player controls
         if (playerActionMap != null)
@@ -96,8 +98,10 @@ public class WinScreenController : MonoBehaviour
 
     private void GoToMainMenu()
     {
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+        
         Time.timeScale = 1f;
-        AudioListener.pause = false;
         SceneManager.LoadScene("MainMenu");
     }
 

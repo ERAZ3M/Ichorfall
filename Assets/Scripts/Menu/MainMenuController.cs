@@ -30,7 +30,9 @@ public class MainMenuController : MonoBehaviour
     
     void OnPlayClicked()
     {
-        // Load your game scene – replace "GameScene" with actual scene name
+        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+        UnityEngine.Cursor.visible = false;
+        
         SceneManager.LoadScene("GameScene");
     }
     
